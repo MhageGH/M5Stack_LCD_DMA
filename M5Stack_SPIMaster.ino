@@ -1,4 +1,4 @@
-#include "SPI_Master.h"
+#include "Lcd_Ex.h"
 
 uint16_t *lines[2];
 spi_device_handle_t spi_device_handle;
