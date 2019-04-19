@@ -1,4 +1,16 @@
-#include "Lcd_Ex.h"
+#include "Lcd_dma.h"
+
+static uint16_t *lines[2];
+static int sending_line=-1;
+static int calc_line=0;
+static spi_device_handle_t spi_device_handle_g;
+
+void CreateBuffer() {
+    for (int i=0; i<2; i++) {
+        lines[i] = (uint16_t*)heap_caps_malloc(320 * PARALLEL_LINES * sizeof(uint16_t), MALLOC_CAP_DMA);
+        assert(lines[i]!=NULL);
+    }
+}
 
 void lcd_cmd(spi_device_handle_t spi_device_handle, const uint8_t cmd) {
     esp_err_t ret;
@@ -93,7 +105,7 @@ void send_line_finish(spi_device_handle_t spi_device_handle)
     }
 }
 
-spi_device_handle_t Init() {
+void Init() {
     esp_err_t ret;
     spi_device_handle_t spi_device_handle;
     spi_bus_config_t buscfg={
@@ -127,5 +139,17 @@ spi_device_handle_t Init() {
     ret=spi_bus_add_device(HSPI_HOST, &devcfg, &spi_device_handle);
     ESP_ERROR_CHECK(ret);
     lcd_init(spi_device_handle);
-    return spi_device_handle;
+    CreateBuffer();
+    spi_device_handle_g = spi_device_handle;
+}
+
+void Revise(int ypos) {
+    if (sending_line != -1) send_line_finish(spi_device_handle_g);
+    sending_line = calc_line;
+    calc_line = (calc_line == 1) ? 0 : 1;
+    send_lines(spi_device_handle_g, ypos, lines[sending_line]);
+}
+
+uint16_t* GetBuf() {
+    return lines[calc_line];
 }

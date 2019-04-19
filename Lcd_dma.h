@@ -15,6 +15,8 @@
 #define PIN_NUM_BCKL GPIO_NUM_32
 #define PARALLEL_LINES 120
 
+void CreateBuffer();
+
 typedef struct {
     uint8_t cmd;
     uint8_t data[16];
@@ -69,4 +71,8 @@ void send_lines(spi_device_handle_t spi_device_handle, int ypos, uint16_t *lined
 
 void send_line_finish(spi_device_handle_t spi_device_handle);
 
-spi_device_handle_t Init();
+void Init();
+
+void Revise(int ypos);
+
+uint16_t* GetBuf();
