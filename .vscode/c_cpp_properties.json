@@ -4,6 +4,7 @@
             "name": "Win32",
             "includePath": [
                 "C:\\\\Users\\\\Mhage\\\\Documents\\\\Arduino\\\\tools\\\\**",
+                "C:\\\\Users\\\\Mhage\\\\Documents\\\\Arduino\\\\libraries\\\\**",
                 "C:\\\\Users\\\\Mhage\\\\Documents\\\\Arduino\\\\hardware\\\\espressif\\\\esp32\\\\**"
             ],
             "forcedInclude": [],

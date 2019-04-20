@@ -32,7 +32,7 @@ void Lcd_dma::CreateFramebuffer()
 {
     for (int i = 0; i < 2; i++)
     {
-        framebuffers[i] = (uint16_t *)heap_caps_malloc(320 * numLineInFramebuffer * sizeof(uint16_t), MALLOC_CAP_DMA);
+        framebuffers[i] = (uint16_t *)heap_caps_malloc(width * height * sizeof(uint16_t), MALLOC_CAP_DMA);
         assert(framebuffers[i] != NULL);
     }
 }
@@ -92,43 +92,42 @@ void Lcd_dma::lcd_init(spi_device_handle_t hSpi)
     gpio_set_level(PIN_NUM_BCKL, 1); ///Enable backlight
 }
 
-void Lcd_dma::send_framebuffer(spi_device_handle_t hSpi, int ypos, uint16_t *linedata)
+void Lcd_dma::send_framebuffer(spi_device_handle_t hSpi, int x, int y, int w, int h, uint16_t *framebuffer)
 {
     esp_err_t ret;
-    int x;
     static spi_transaction_t trans[6];
-    for (x = 0; x < 6; x++)
+    for (int i = 0; i < 6; i++)
     {
-        memset(&trans[x], 0, sizeof(spi_transaction_t));
-        if ((x & 1) == 0)
+        memset(&trans[i], 0, sizeof(spi_transaction_t));
+        if ((i & 1) == 0)
         {
-            trans[x].length = 8;
-            trans[x].user = (void *)0;
+            trans[i].length = 8;
+            trans[i].user = (void *)0;
         }
         else
         {
-            trans[x].length = 8 * 4;
-            trans[x].user = (void *)1;
+            trans[i].length = 8 * 4;
+            trans[i].user = (void *)1;
         }
-        trans[x].flags = SPI_TRANS_USE_TXDATA;
+        trans[i].flags = SPI_TRANS_USE_TXDATA;
     }
-    trans[0].tx_data[0] = 0x2A;                                 //Column Address Set
-    trans[1].tx_data[0] = 0;                                    //Start Col High
-    trans[1].tx_data[1] = 0;                                    //Start Col Low
-    trans[1].tx_data[2] = (320) >> 8;                           //End Col High
-    trans[1].tx_data[3] = (320) & 0xff;                         //End Col Low
-    trans[2].tx_data[0] = 0x2B;                                 //Page address set
-    trans[3].tx_data[0] = ypos >> 8;                            //Start page high
-    trans[3].tx_data[1] = ypos & 0xff;                          //start page low
-    trans[3].tx_data[2] = (ypos + numLineInFramebuffer) >> 8;   //end page high
-    trans[3].tx_data[3] = (ypos + numLineInFramebuffer) & 0xff; //end page low
-    trans[4].tx_data[0] = 0x2C;                                 //memory write
-    trans[5].tx_buffer = linedata;                              //finally send the line data
-    trans[5].length = 320 * 2 * 8 * numLineInFramebuffer;       //Data length, in bits
-    trans[5].flags = 0;                                         //undo SPI_TRANS_USE_TXDATA flag
-    for (x = 0; x < 6; x++)
+    trans[0].tx_data[0] = 0x2A;               //Column Address Set
+    trans[1].tx_data[0] = x >> 8;             //Start Col High
+    trans[1].tx_data[1] = x & 0xFF;           //Start Col Low
+    trans[1].tx_data[2] = (x + w - 1) >> 8;   //End Col High
+    trans[1].tx_data[3] = (x + w - 1) & 0xFF; //End Col Low
+    trans[2].tx_data[0] = 0x2B;               //Page address set
+    trans[3].tx_data[0] = y >> 8;             //Start page high
+    trans[3].tx_data[1] = y & 0xFF;           //start page low
+    trans[3].tx_data[2] = (y + h - 1) >> 8;   //end page high
+    trans[3].tx_data[3] = (y + h - 1) & 0xFF; //end page low
+    trans[4].tx_data[0] = 0x2C;               //memory write
+    trans[5].tx_buffer = framebuffer;         //finally send the line data
+    trans[5].length = w * 2 * 8 * h;          //Data length, in bits
+    trans[5].flags = 0;                       //undo SPI_TRANS_USE_TXDATA flag
+    for (int i = 0; i < 6; i++)
     {
-        ret = spi_device_queue_trans(hSpi, &trans[x], portMAX_DELAY);
+        ret = spi_device_queue_trans(hSpi, &trans[i], portMAX_DELAY);
         assert(ret == ESP_OK);
     }
 }
@@ -137,16 +136,17 @@ void Lcd_dma::send_framebuffer_finish(spi_device_handle_t hSpi)
 {
     spi_transaction_t *rtrans;
     esp_err_t ret;
-    for (int x = 0; x < 6; ++x)
+    for (int i = 0; i < 6; ++i)
     {
         ret = spi_device_get_trans_result(hSpi, &rtrans, portMAX_DELAY);
         assert(ret == ESP_OK);
     }
 }
 
-Lcd_dma::Lcd_dma(int numLineInFramebuffer)
+Lcd_dma::Lcd_dma(int width, int height)
 {
-    this->numLineInFramebuffer = numLineInFramebuffer;
+    this->width = width;
+    this->height = height;
     esp_err_t ret;
     spi_device_handle_t hSpi;
     spi_bus_config_t buscfg = {
@@ -155,7 +155,7 @@ Lcd_dma::Lcd_dma(int numLineInFramebuffer)
         .sclk_io_num = PIN_NUM_CLK,
         .quadwp_io_num = -1,
         .quadhd_io_num = -1,
-        .max_transfer_sz = numLineInFramebuffer * 320 * 2 + 8,
+        .max_transfer_sz = height * width * 2 + 8,
         .flags = 0,
         .intr_flags = 0};
     spi_device_interface_config_t devcfg = {
@@ -188,13 +188,13 @@ Lcd_dma::~Lcd_dma()
         free(framebuffers[i]);
 }
 
-void Lcd_dma::Flip(int ypos)
+void Lcd_dma::Flip(int x, int y)
 {
     if (sending_framebuffer != -1)
         send_framebuffer_finish(hSpi_m);
     sending_framebuffer = calc_framebuffer;
     calc_framebuffer = (calc_framebuffer == 1) ? 0 : 1;
-    send_framebuffer(hSpi_m, ypos, framebuffers[sending_framebuffer]);
+    send_framebuffer(hSpi_m, x, y, width, height, framebuffers[sending_framebuffer]);
 }
 
 uint16_t *Lcd_dma::GetFramebuffer()
@@ -202,7 +202,25 @@ uint16_t *Lcd_dma::GetFramebuffer()
     return framebuffers[calc_framebuffer];
 }
 
-int Lcd_dma::GetNumLineInFramebuffer()
+int Lcd_dma::GetHeight()
 {
-    return numLineInFramebuffer;
+    return height;
+}
+
+int Lcd_dma::GetWidth()
+{
+    return width;
+}
+
+void Lcd_dma::fillScreen(uint16_t color)
+{
+    uint16_t *buf = (uint16_t *)heap_caps_malloc(320 * 1 * sizeof(uint16_t), MALLOC_CAP_DMA);
+    for (int i = 0; i < 320; ++i)
+        buf[i] = color;
+    for (int i = 0; i < 240; ++i)
+    {
+        send_framebuffer(hSpi_m, 0, i, 320, 1, buf);
+        send_framebuffer_finish(hSpi_m);
+    }
+    free(buf);
 }

@@ -29,7 +29,7 @@ class Lcd_dma
     } type_lcd_t;
 
     uint16_t *framebuffers[2];
-    int numLineInFramebuffer;
+    int width, height;
     int sending_framebuffer = -1;
     int calc_framebuffer = 0;
     spi_device_handle_t hSpi_m;
@@ -40,13 +40,15 @@ class Lcd_dma
     void lcd_data(spi_device_handle_t hSpi, const uint8_t *data, int len);
     static void lcd_spi_pre_transfer_callback(spi_transaction_t *t); //This function is called (in irq context!) just before a transmission starts. It will set the D/C line to the value indicated in the user field.
     void lcd_init(spi_device_handle_t hSpi);
-    void send_framebuffer(spi_device_handle_t hSpi, int ypos, uint16_t *linedata);
+    void send_framebuffer(spi_device_handle_t hSpi, int x, int y, int w, int h, uint16_t *linedata);
     void send_framebuffer_finish(spi_device_handle_t hSpi);
 
 public:
-    Lcd_dma(int numLineInFramebuffer);
+    Lcd_dma(int width, int height);
     ~Lcd_dma();
-    void Flip(int ypos);
+    void Flip(int x, int y);
     uint16_t *GetFramebuffer();
-    int GetNumLineInFramebuffer();
+    int GetWidth();
+    int GetHeight();
+    void fillScreen(uint16_t color);
 };
