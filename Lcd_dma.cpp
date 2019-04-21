@@ -28,6 +28,41 @@ DRAM_ATTR const Lcd_dma::lcd_init_cmd_t Lcd_dma::ili_init_cmds[] = {
     {0, {0}, 0xff}     // end
 };
 
+spi_device_handle_t Lcd_dma::spi_start()
+{
+    esp_err_t ret;
+    spi_device_handle_t hSpi;
+    spi_bus_config_t buscfg = {
+        .mosi_io_num = PIN_NUM_MOSI,
+        .miso_io_num = PIN_NUM_MISO,
+        .sclk_io_num = PIN_NUM_CLK,
+        .quadwp_io_num = -1,
+        .quadhd_io_num = -1,
+        .max_transfer_sz = height * width * 2 + 8,
+        .flags = 0,
+        .intr_flags = 0};
+    spi_device_interface_config_t devcfg = {
+        .command_bits = 0,
+        .address_bits = 0,
+        .dummy_bits = 0,
+        .mode = 0, //SPI mode 0
+        .duty_cycle_pos = 0,
+        .cs_ena_pretrans = 0,
+        .cs_ena_posttrans = 0,
+        .clock_speed_hz = 26 * 1000 * 1000, //Clock out at 26 MHz
+        .input_delay_ns = 0,
+        .spics_io_num = PIN_NUM_CS, //CS pin
+        .flags = 0,
+        .queue_size = 7,                         //We want to be able to queue 7 transactions at a time
+        .pre_cb = lcd_spi_pre_transfer_callback, //Specify pre-transfer callback to handle D/C line
+        .post_cb = 0};
+    ret = spi_bus_initialize(HSPI_HOST, &buscfg, 1);
+    ESP_ERROR_CHECK(ret);
+    ret = spi_bus_add_device(HSPI_HOST, &devcfg, &hSpi);
+    ESP_ERROR_CHECK(ret);
+    return hSpi;
+}
+
 void Lcd_dma::CreateFramebuffer()
 {
     for (int i = 0; i < 2; i++)
@@ -147,43 +182,17 @@ Lcd_dma::Lcd_dma(int width, int height)
 {
     this->width = width;
     this->height = height;
-    esp_err_t ret;
-    spi_device_handle_t hSpi;
-    spi_bus_config_t buscfg = {
-        .mosi_io_num = PIN_NUM_MOSI,
-        .miso_io_num = PIN_NUM_MISO,
-        .sclk_io_num = PIN_NUM_CLK,
-        .quadwp_io_num = -1,
-        .quadhd_io_num = -1,
-        .max_transfer_sz = height * width * 2 + 8,
-        .flags = 0,
-        .intr_flags = 0};
-    spi_device_interface_config_t devcfg = {
-        .command_bits = 0,
-        .address_bits = 0,
-        .dummy_bits = 0,
-        .mode = 0, //SPI mode 0
-        .duty_cycle_pos = 0,
-        .cs_ena_pretrans = 0,
-        .cs_ena_posttrans = 0,
-        .clock_speed_hz = 10 * 1000 * 1000, //Clock out at 10 MHz
-        .input_delay_ns = 0,
-        .spics_io_num = PIN_NUM_CS, //CS pin
-        .flags = 0,
-        .queue_size = 7,                         //We want to be able to queue 7 transactions at a time
-        .pre_cb = lcd_spi_pre_transfer_callback, //Specify pre-transfer callback to handle D/C line
-        .post_cb = 0};
-    ret = spi_bus_initialize(HSPI_HOST, &buscfg, 1);
-    ESP_ERROR_CHECK(ret);
-    ret = spi_bus_add_device(HSPI_HOST, &devcfg, &hSpi);
-    ESP_ERROR_CHECK(ret);
-    lcd_init(hSpi);
+    hSpi_m = spi_start();
+    lcd_init(hSpi_m);
     CreateFramebuffer();
-    hSpi_m = hSpi;
 }
 
 Lcd_dma::~Lcd_dma()
 {
+    if (sending_framebuffer != -1)
+        send_framebuffer_finish(hSpi_m);
+    spi_bus_remove_device(hSpi_m);
+    spi_bus_free(HSPI_HOST);
     for (int i = 0; i < 2; ++i)
         free(framebuffers[i]);
 }
@@ -223,4 +232,19 @@ void Lcd_dma::fillScreen(uint16_t color)
         send_framebuffer_finish(hSpi_m);
     }
     free(buf);
+    sending_framebuffer = -1;
+}
+
+void Lcd_dma::SpiFree()
+{
+    if (sending_framebuffer != -1)
+        send_framebuffer_finish(hSpi_m);
+    spi_bus_remove_device(hSpi_m);
+    spi_bus_free(HSPI_HOST);
+    sending_framebuffer = -1;
+}
+
+void Lcd_dma::SpiRestart()
+{
+    hSpi_m = spi_start();
 }

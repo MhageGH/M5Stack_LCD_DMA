@@ -1,3 +1,4 @@
+#include <M5Stack.h>
 #include <string.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
@@ -34,6 +35,7 @@ class Lcd_dma
     int calc_framebuffer = 0;
     spi_device_handle_t hSpi_m;
 
+    spi_device_handle_t spi_start();
     void CreateFramebuffer();
     DRAM_ATTR static const lcd_init_cmd_t ili_init_cmds[];
     void lcd_cmd(spi_device_handle_t hSpi, const uint8_t cmd);
@@ -44,11 +46,25 @@ class Lcd_dma
     void send_framebuffer_finish(spi_device_handle_t hSpi);
 
 public:
+    // @param width and height of drawing area
     Lcd_dma(int width, int height);
     ~Lcd_dma();
-    void Flip(int x, int y);
-    uint16_t *GetFramebuffer();
     int GetWidth();
     int GetHeight();
+
+    // You can get framebuffer (back buffer) with this function and revise it.
+    // 16bit RGB (5-6-5) colors should be expressed with little endian.
+    uint16_t *GetFramebuffer();
+
+    // 1. Wait the end of previous transmit.
+    // 2. Flip the front buffer and back buffer. Back buffer has been revised by you.
+    // 3. Start next transmit with front buffer.
+    // @param position of drawing area
+    void Flip(int x, int y);
+
+    // @param color : 16bit RGB (5-6-5) color should be expressed with little endian.
     void fillScreen(uint16_t color);
+
+    void SpiFree();
+    void SpiRestart();
 };
