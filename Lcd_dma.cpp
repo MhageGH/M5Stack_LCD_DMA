@@ -248,3 +248,11 @@ void Lcd_dma::SpiRestart()
 {
     hSpi_m = spi_start();
 }
+
+void Lcd_dma::SetBrightness(int brightness)
+{
+    // for M5Stack backlight PWM control.
+    ledcSetup(7, 44100, 8);
+    ledcAttachPin(PIN_NUM_BCKL, 7);
+    ledcWrite(7, brightness);
+}

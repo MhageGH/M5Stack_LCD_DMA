@@ -51,6 +51,8 @@ public:
     ~Lcd_dma();
     int GetWidth();
     int GetHeight();
+    // @param brightness 0~100
+    void SetBrightness(int brightness);
 
     // You can get framebuffer (back buffer) with this function and revise it.
     // 16bit RGB (5-6-5) colors should be expressed with little endian.

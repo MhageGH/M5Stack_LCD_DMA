@@ -5,6 +5,7 @@ Lcd_dma *lcd_dma;
 void setup()
 {
     lcd_dma = new Lcd_dma(200, 150);
+    lcd_dma->SetBrightness(20);
     lcd_dma->fillScreen(0);
 }
 
