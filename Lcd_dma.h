@@ -51,7 +51,7 @@ public:
     ~Lcd_dma();
     int GetWidth();
     int GetHeight();
-    // @param brightness 0~100
+    // @param brightness 0~255
     void SetBrightness(int brightness);
 
     // You can get framebuffer (back buffer) with this function and revise it.

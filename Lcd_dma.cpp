@@ -49,16 +49,16 @@ spi_device_handle_t Lcd_dma::spi_start()
         .duty_cycle_pos = 0,
         .cs_ena_pretrans = 0,
         .cs_ena_posttrans = 0,
-        .clock_speed_hz = 26 * 1000 * 1000, //Clock out at 26 MHz
+        .clock_speed_hz = 40 * 1000 * 1000,
         .input_delay_ns = 0,
         .spics_io_num = PIN_NUM_CS, //CS pin
         .flags = 0,
         .queue_size = 7,                         //We want to be able to queue 7 transactions at a time
         .pre_cb = lcd_spi_pre_transfer_callback, //Specify pre-transfer callback to handle D/C line
         .post_cb = 0};
-    ret = spi_bus_initialize(HSPI_HOST, &buscfg, 1);
+    ret = spi_bus_initialize(VSPI_HOST, &buscfg, 1);
     ESP_ERROR_CHECK(ret);
-    ret = spi_bus_add_device(HSPI_HOST, &devcfg, &hSpi);
+    ret = spi_bus_add_device(VSPI_HOST, &devcfg, &hSpi);
     ESP_ERROR_CHECK(ret);
     return hSpi;
 }
