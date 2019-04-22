@@ -1,0 +1,10 @@
+Lcd_dma	KEYWORD1
+
+GetWidth	KEYWORD2
+GetHeight KEYWORD2
+SetBrightness KEYWORD2
+GetFramebuffer KEYWORD2
+Flip KEYWORD2
+fillScreen KEYWORD2
+SpiFree KEYWORD2
+SpiRestart KEYWORD2
