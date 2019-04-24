@@ -34,6 +34,7 @@ class Lcd_dma
     int sending_framebuffer = -1;
     int calc_framebuffer = 0;
     spi_device_handle_t hSpi_m;
+    spi_host_device_t spi_host = VSPI_HOST;
 
     spi_device_handle_t spi_start();
     void CreateFramebuffer();

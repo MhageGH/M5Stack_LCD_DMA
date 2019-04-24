@@ -56,9 +56,9 @@ spi_device_handle_t Lcd_dma::spi_start()
         .queue_size = 7,                         //We want to be able to queue 7 transactions at a time
         .pre_cb = lcd_spi_pre_transfer_callback, //Specify pre-transfer callback to handle D/C line
         .post_cb = 0};
-    ret = spi_bus_initialize(VSPI_HOST, &buscfg, 1);
+    ret = spi_bus_initialize(spi_host, &buscfg, 1);
     ESP_ERROR_CHECK(ret);
-    ret = spi_bus_add_device(VSPI_HOST, &devcfg, &hSpi);
+    ret = spi_bus_add_device(spi_host, &devcfg, &hSpi);
     ESP_ERROR_CHECK(ret);
     return hSpi;
 }
@@ -192,7 +192,7 @@ Lcd_dma::~Lcd_dma()
     if (sending_framebuffer != -1)
         send_framebuffer_finish(hSpi_m);
     spi_bus_remove_device(hSpi_m);
-    spi_bus_free(HSPI_HOST);
+    spi_bus_free(spi_host);
     for (int i = 0; i < 2; ++i)
         free(framebuffers[i]);
 }
@@ -240,7 +240,7 @@ void Lcd_dma::SpiFree()
     if (sending_framebuffer != -1)
         send_framebuffer_finish(hSpi_m);
     spi_bus_remove_device(hSpi_m);
-    spi_bus_free(HSPI_HOST);
+    spi_bus_free(spi_host);
     sending_framebuffer = -1;
 }
 
