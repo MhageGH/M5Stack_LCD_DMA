@@ -3,11 +3,6 @@
 
 Lcd_dma *lcd_dma;
 
-uint16_t changeEndian(uint16_t p)
-{
-    return (p >> 8) | (p << 8);
-}
-
 void setup()
 {
     const int height = 10;
@@ -19,7 +14,7 @@ void setup()
         uint16_t *framebuffer = lcd_dma->GetFramebuffer();
         for (int i = 0; i < lcd_dma->GetHeight(); ++i)
             for (int j = 0; j < lcd_dma->GetWidth(); ++j)
-                framebuffer[lcd_dma->GetWidth() * i + j] = changeEndian(picture[240 - 1 - k * height - i][j]);
+                framebuffer[lcd_dma->GetWidth() * i + j] = picture[k * height + i][j];
         lcd_dma->Flip(0, k * height);
     }
 }

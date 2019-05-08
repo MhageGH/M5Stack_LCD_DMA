@@ -16,11 +16,12 @@ namespace ConsoleApp1
                 sb.Append("{ ");
                 for (int j = 0; j < bitmap.Width; ++j)
                 {
-                    uint argb = (uint)bitmap.GetPixel(j, bitmap.Height - 1 - i).ToArgb();
+                    uint argb = (uint)bitmap.GetPixel(j, i).ToArgb();
                     uint r = (argb >> (16 + 3)) & 0x1F;
                     uint g = (argb >> (8 + 2)) & 0x3F;
                     uint b = (argb >> (0 + 3)) & 0x1F;
                     ushort rgb = (ushort)((r << (6 + 5)) | (g << 5) | b);
+                    rgb = (ushort)(((rgb >> 8) & 0x00FF) | ((rgb << 8) & 0xFF00));  // change to little endian
                     sb.Append("0x" + rgb.ToString("X4"));
                     sb.Append((j == bitmap.Width - 1) ? "" : ", ");
                 }
