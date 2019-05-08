@@ -54,6 +54,7 @@ public:
     int GetHeight();
     // @param brightness 0~255
     void SetBrightness(int brightness);
+    void SetSize(int width, int height);
 
     // You can get framebuffer (back buffer) with this function and revise it.
     // 16bit RGB (5-6-5) colors should be expressed with little endian.

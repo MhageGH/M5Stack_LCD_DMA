@@ -38,7 +38,7 @@ spi_device_handle_t Lcd_dma::spi_start()
         .sclk_io_num = PIN_NUM_CLK,
         .quadwp_io_num = -1,
         .quadhd_io_num = -1,
-        .max_transfer_sz = height * width * 2 + 8,
+        .max_transfer_sz = 240 * 320 * 2 + 8,
         .flags = 0,
         .intr_flags = 0};
     spi_device_interface_config_t devcfg = {
@@ -255,4 +255,16 @@ void Lcd_dma::SetBrightness(int brightness)
     ledcSetup(7, 44100, 8);
     ledcAttachPin(PIN_NUM_BCKL, 7);
     ledcWrite(7, brightness);
+}
+
+void Lcd_dma::SetSize(int width, int height)
+{
+    this->width = width;
+    this->height = height;
+    if (sending_framebuffer != -1)
+        send_framebuffer_finish(hSpi_m);
+    for (int i = 0; i < 2; ++i)
+        free(framebuffers[i]);
+    CreateFramebuffer();
+    sending_framebuffer = -1;
 }
