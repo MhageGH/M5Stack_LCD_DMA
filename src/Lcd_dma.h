@@ -1,18 +1,6 @@
-#include <M5Stack.h>
-#include <string.h>
-#include "freertos/FreeRTOS.h"
-#include "freertos/task.h"
-#include "esp_system.h"
+#pragma once
+
 #include "driver/spi_master.h"
-#include "soc/gpio_struct.h"
-#include "driver/gpio.h"
-#define PIN_NUM_MISO GPIO_NUM_19
-#define PIN_NUM_MOSI GPIO_NUM_23
-#define PIN_NUM_CLK GPIO_NUM_18
-#define PIN_NUM_CS GPIO_NUM_14
-#define PIN_NUM_DC GPIO_NUM_27
-#define PIN_NUM_RST GPIO_NUM_33
-#define PIN_NUM_BCKL GPIO_NUM_32
 
 class Lcd_dma
 {

@@ -1,5 +1,17 @@
 #include "Lcd_dma.h"
 
+#include <string.h>
+#include <freertos/task.h>
+#include <Arduino.h>
+
+#define PIN_NUM_MISO GPIO_NUM_19
+#define PIN_NUM_MOSI GPIO_NUM_23
+#define PIN_NUM_CLK GPIO_NUM_18
+#define PIN_NUM_CS GPIO_NUM_14
+#define PIN_NUM_DC GPIO_NUM_27
+#define PIN_NUM_RST GPIO_NUM_33
+#define PIN_NUM_BCKL GPIO_NUM_32
+
 DRAM_ATTR const Lcd_dma::lcd_init_cmd_t Lcd_dma::ili_init_cmds[] = {
     // ref to TFT_eSPI::init() In_eSPI.cpp in M5Stack Libarary
     {0xEF, {0x03, 0x80, 0x02}, 3},
